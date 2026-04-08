@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>群發訊息 Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --text-primary: #111928;
+  --text-secondary: #6B7280;
+  --text-tertiary: #9CA3AF;
+  --text-menu: #374151;
+  --text-heading: #111928;
+  --text-label: #111928;
+  --text-action-primary: #1C64F2;
+  --text-error-primary: #E02424;
+  --surface-primary: #FFFFFF;
+  --surface-secondary: #F3F4F6;
+  --surface-tertiary: #F9FAFB;
+  --surface-action-button-primary: #1A56DB;
+  --border-primary: #D1D5DB;
+  --border-secondary: #E5E7EB;
+  --primary-700: #1A56DB;
+  --shadow-card: 0 1px 15px 0 rgba(0,0,0,0.04), 0 1px 2px 0 rgba(0,0,0,0.02);
+  --shadow-modal: 0 25px 70px -12px rgba(0,0,0,0.2);
+}
+body { font-family: 'Noto Sans TC', sans-serif; background: #F9FAFB; color: var(--text-primary); min-height: 100vh; }
+
+/* ── ICON ── */
+.icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.icon svg { display: block; }
+
+/* ── SCREENS ── */
+.screen { display: none; min-height: 100vh; }
+.screen.active { display: flex; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 172px; min-height: 100vh;
+  background: #fff; border-right: 1px solid var(--border-secondary);
+  display: flex; flex-direction: column; flex-shrink: 0;
+}
+.sidebar-logo { padding: 20px 16px 12px; display: flex; align-items: center; justify-content: space-between; }
+.logo-text { font-size: 20px; font-weight: 700; color: #1C64F2; letter-spacing: -0.5px; }
+.logo-text span { color: #111928; }
+.clinic-selector {
+  margin: 0 12px 8px; padding: 8px 12px;
+  background: var(--surface-tertiary); border: 1px solid var(--border-secondary); border-radius: 8px;
+  font-size: 13px; font-weight: 500; color: var(--text-primary);
+  display: flex; align-items: center; justify-content: space-between; cursor: pointer;
+}
+.nav-list { flex: 1; padding: 4px 0; overflow-y: auto; }
+.nav-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 12px; font-size: 13px; color: var(--text-menu);
+  cursor: pointer; border-radius: 6px; margin: 1px 8px;
+  transition: background 0.12s;
+}
+.nav-item:hover { background: #F3F4F6; }
+.nav-item.active { background: #EBF5FF; color: #1A56DB; font-weight: 500; }
+.nav-item .nav-icon { color: var(--text-secondary); flex-shrink: 0; }
+.nav-item.active .nav-icon { color: #1A56DB; }
+.nav-item .ml-auto { margin-left: auto; }
+.nav-sub-item {
+  display: block; padding: 7px 12px 7px 36px;
+  font-size: 13px; color: var(--text-secondary);
+  cursor: pointer; border-radius: 6px; margin: 1px 8px;
+  transition: background 0.12s;
+}
+.nav-sub-item:hover { background: #F3F4F6; color: var(--text-primary); }
+.nav-sub-item.active { color: #1A56DB; font-weight: 500; background: #EBF5FF; }
+.sidebar-user {
+  padding: 12px 16px; border-top: 1px solid var(--border-secondary);
+  display: flex; align-items: center; gap: 10px;
+}
+.user-avatar {
+  width: 32px; height: 32px; border-radius: 50%; background: #10B981;
+  color: white; font-size: 13px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.user-name { font-size: 13px; font-weight: 700; }
+.user-role { font-size: 12px; color: var(--text-secondary); }
+
+/* ── MAIN CONTENT ── */
+.main-content { flex: 1; min-width: 0; padding: 32px 40px; overflow-y: auto; }
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.page-title { font-size: 24px; font-weight: 700; color: var(--text-heading); letter-spacing: 0.6px; }
+.header-actions { display: flex; gap: 12px; align-items: center; }
+
+/* ── SEARCH ── */
+.search-input {
+  display: flex; align-items: center; gap: 8px;
+  background: white; border: 1px solid var(--border-primary); border-radius: 8px;
+  padding: 10px 16px; font-size: 14px; color: var(--text-secondary); width: 240px; cursor: text;
+}
+
+/* ── BUTTONS ── */
+.btn { display: inline-flex; align-items: center; gap: 8px; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 500; font-family: inherit; cursor: pointer; letter-spacing: 0.35px; border: none; transition: opacity .15s, background .15s; }
+.btn-primary { background: var(--surface-action-button-primary); color: white; }
+.btn-primary:hover { opacity: 0.9; }
+.btn-outline { background: white; color: var(--text-primary); border: 1px solid var(--border-secondary); }
+.btn-outline:hover { background: var(--surface-tertiary); }
+.btn-outline-primary { background: white; color: var(--primary-700); border: 1px solid var(--primary-700); }
+.btn-outline-primary:hover { background: #EBF5FF; }
+.btn-sm { padding: 8px 14px; font-size: 13px; }
+
+/* ── INFO BANNER ── */
+.info-banner {
+  background: white; border: 1px solid var(--border-secondary); border-radius: 8px;
+  padding: 16px 20px; margin-bottom: 20px;
+  display: flex; gap: 12px; align-items: flex-start;
+}
+.info-banner-body { flex: 1; }
+.info-banner-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.info-banner-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+.info-banner-close { color: var(--text-secondary); cursor: pointer; }
+.info-banner-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 10px; background: #111928; color: white;
+  border-radius: 6px; padding: 6px 12px; font-size: 13px; font-weight: 500; cursor: pointer;
+}
+
+/* ── FILTER BAR ── */
+.filter-bar { margin-bottom: 16px; }
+.filter-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: white; border: 1px solid var(--border-primary); border-radius: 6px;
+  padding: 6px 12px; font-size: 13px; color: var(--text-secondary); cursor: pointer;
+}
+
+/* ── DATA TABLE ── */
+.data-table { width: 100%; background: white; border-radius: 8px; overflow: hidden; }
+.table-header {
+  display: grid; grid-template-columns: 1fr 100px 90px 110px 160px 160px;
+  padding: 12px 20px; background: #F9FAFB;
+  border-bottom: 1px solid var(--border-secondary);
+  font-size: 12px; font-weight: 500; color: var(--text-secondary); letter-spacing: 0.3px;
+}
+.table-row {
+  display: grid; grid-template-columns: 1fr 100px 90px 110px 160px 160px;
+  padding: 14px 20px; border-bottom: 1px solid var(--border-secondary);
+  align-items: center; font-size: 14px; transition: background .1s;
+}
+.table-row:last-child { border-bottom: none; }
+.table-row:hover { background: #FAFAFA; }
+.table-row.clickable { cursor: pointer; }
+.table-row.clickable:hover { background: #EFF6FF; }
+.table-row.clickable .row-name { color: #1A56DB; font-weight: 500; }
+.row-target { color: var(--text-secondary); font-size: 13px; }
+.row-time { font-size: 13px; color: var(--text-secondary); line-height: 1.4; }
+
+/* BADGES */
+.badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 99px; font-size: 13px; font-weight: 500; }
+.badge-draft { background: #F3F4F6; color: #374151; }
+.badge-scheduled { background: #FDF6B2; color: #723B13; }
+.badge-sent { background: #DEF7EC; color: #03543F; }
+
+/* PAGINATION */
+.pagination {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; background: white; border-top: 1px solid var(--border-secondary);
+  font-size: 13px; color: var(--text-secondary);
+}
+.page-controls { display: flex; align-items: center; gap: 4px; }
+.page-btn {
+  width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border-secondary); border-radius: 6px;
+  cursor: pointer; font-size: 13px; background: white; color: var(--text-secondary);
+  font-family: inherit; transition: background .1s;
+}
+.page-btn:hover { background: var(--surface-tertiary); }
+.page-btn.active { background: #1A56DB; color: white; border-color: #1A56DB; }
+
+/* ── SCREEN B: EDIT PAGE ── */
+.edit-page { background: #F9FAFB; min-height: 100vh; width: 100%; }
+.edit-page-header { display: flex; align-items: center; gap: 16px; padding: 32px 48px 24px; }
+.back-btn {
+  width: 48px; height: 48px; border: 1px solid var(--border-secondary); border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  background: white; cursor: pointer; transition: background .1s; color: var(--text-primary);
+}
+.back-btn:hover { background: var(--surface-tertiary); }
+.edit-page-title { font-size: 24px; font-weight: 700; color: var(--text-heading); letter-spacing: 0.6px; }
+.edit-content { max-width: 736px; margin: 0 auto; padding: 0 48px 48px; display: flex; flex-direction: column; gap: 24px; }
+
+/* CARD */
+.card { background: white; border-radius: 16px; padding: 24px; box-shadow: var(--shadow-card); }
+.card-header { display: flex; align-items: center; gap: 6px; margin-bottom: 24px; }
+.card-title { flex: 1; font-size: 20px; font-weight: 700; color: var(--text-heading); line-height: 1.25; letter-spacing: 0.5px; }
+.edit-btn {
+  display: flex; align-items: center; gap: 8px;
+  border: 1px solid var(--border-secondary); border-radius: 8px; padding: 10px 20px;
+  background: white; font-size: 14px; font-weight: 500; color: var(--text-primary);
+  font-family: inherit; cursor: pointer; letter-spacing: 0.35px; transition: background .1s;
+}
+.edit-btn:hover { background: var(--surface-tertiary); }
+
+/* INPUT */
+.field-label { font-size: 14px; font-weight: 500; color: var(--text-label); margin-bottom: 8px; letter-spacing: 0.35px; }
+.field-label .required { color: #E02424; }
+.input-wrapper { max-width: 320px; padding: 8px; }
+.input-field {
+  background: white; border: 1px solid var(--border-primary); border-radius: 8px;
+  padding: 10px 16px; height: 48px; font-size: 14px; font-family: inherit;
+  color: var(--text-primary); width: 100%; outline: none; letter-spacing: 0.35px;
+}
+.input-field:focus { border-color: #1A56DB; box-shadow: 0 0 0 2px rgba(26,86,219,.15); }
+.char-count { font-size: 14px; color: var(--text-secondary); text-align: right; margin-top: 4px; }
+.card-value { font-size: 16px; font-weight: 500; color: var(--text-primary); line-height: 1.5; letter-spacing: 0.4px; }
+
+/* CONDITION ROWS */
+.condition-row { display: flex; flex-direction: column; gap: 2px; }
+.condition-label { font-size: 16px; color: var(--text-secondary); line-height: 1.5; letter-spacing: 0.4px; }
+.condition-value { font-size: 16px; font-weight: 500; color: var(--text-primary); line-height: 1.5; }
+
+/* PREVIEW BOX */
+.preview-box { background: #F3F4F6; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 24px; }
+.email-preview-card { background: white; border-radius: 16px; padding: 16px; box-shadow: var(--shadow-card); }
+.email-meta { font-size: 15px; font-weight: 500; line-height: 1.5; margin-bottom: 4px; }
+.email-meta .label { color: #9CA3AF; margin-right: 4px; }
+.email-divider { height: 1px; background: var(--border-secondary); margin: 8px 0; }
+.email-subject { font-size: 15px; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
+.email-body { font-size: 15px; color: var(--text-primary); line-height: 1.6; white-space: pre-wrap; }
+.image-card { background: white; border: 1px solid var(--border-secondary); border-radius: 16px; padding: 20px; }
+.image-card img { width: 100%; height: 160px; object-fit: cover; border-radius: 8px; display: block; }
+.file-item {
+  background: white; border-radius: 8px; padding: 14px 20px;
+  display: flex; align-items: center; gap: 8px;
+}
+.file-name { font-size: 15px; font-weight: 500; color: var(--text-secondary); flex: 1; }
+.file-size { font-size: 15px; color: var(--text-tertiary); }
+.file-action { cursor: pointer; color: var(--text-tertiary); transition: color .1s; }
+.file-action:hover { color: var(--text-secondary); }
+.edit-actions { display: flex; align-items: center; justify-content: flex-end; gap: 20px; }
+
+/* ── MODAL ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(75,85,99,0.65); z-index: 100;
+  align-items: flex-start; justify-content: center;
+  overflow-y: auto; padding: 48px 24px;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: white; border-radius: 16px; box-shadow: var(--shadow-modal);
+  width: 1040px; max-width: 100%; padding: 24px;
+  display: flex; flex-direction: column; gap: 24px;
+  animation: modalIn .18s ease; flex-shrink: 0;
+}
+@keyframes modalIn { from { opacity: 0; transform: translateY(-10px) scale(.98); } to { opacity: 1; transform: none; } }
+.modal-header { display: flex; align-items: flex-start; justify-content: space-between; }
+.modal-title { font-size: 20px; font-weight: 700; color: var(--text-heading); line-height: 1.25; letter-spacing: 0.5px; }
+.modal-close-btn {
+  width: 32px; height: 32px; border-radius: 8px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-secondary); border: none; background: none;
+  transition: background .12s;
+}
+.modal-close-btn:hover { background: #F3F4F6; color: var(--text-primary); }
+.modal-footer { display: flex; align-items: center; justify-content: flex-end; gap: 16px; }
+
+/* TAB GROUP */
+.tab-group { display: inline-flex; border: 1px solid var(--border-secondary); border-radius: 8px; overflow: hidden; }
+.tab-btn {
+  padding: 8px 16px; font-size: 14px; font-weight: 500; font-family: inherit;
+  color: var(--text-primary); background: white; border: none; cursor: pointer; letter-spacing: 0.35px;
+}
+.tab-btn.active { background: #E5E7EB; }
+
+/* MODAL BODY LAYOUT */
+.modal-2col { display: flex; gap: 24px; align-items: flex-start; }
+.modal-left { width: 468px; flex-shrink: 0; display: flex; flex-direction: column; gap: 24px; }
+.modal-right { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+
+/* MODAL SECTION */
+.modal-section {
+  background: white; border: 1px solid var(--border-secondary); border-radius: 16px;
+  padding: 24px; display: flex; flex-direction: column; gap: 20px;
+}
+.modal-section-header { display: flex; align-items: center; justify-content: space-between; }
+.modal-section-title { font-size: 18px; font-weight: 700; color: var(--text-heading); line-height: 1.25; letter-spacing: 0.45px; }
+.required-star { color: #E02424; font-size: 14px; font-weight: 500; margin-left: 1px; }
+.section-actions { display: flex; gap: 2px; }
+.icon-btn {
+  width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+  border-radius: 6px; background: white; cursor: pointer; border: none;
+  color: var(--text-secondary); transition: background .1s;
+}
+.icon-btn:hover { background: #F3F4F6; color: var(--text-primary); }
+
+/* RICH TEXTAREA */
+.rich-textarea-wrapper { border: 1px solid var(--border-primary); border-radius: 8px; overflow: hidden; }
+.rich-toolbar {
+  background: #E5E7EB; padding: 8px 12px;
+  display: flex; align-items: center; gap: 4px;
+  font-size: 13px; color: var(--text-secondary);
+}
+.rich-toolbar .tool { padding: 3px 5px; border-radius: 3px; cursor: pointer; font-weight: 600; display: flex; align-items: center; }
+.rich-toolbar .tool:hover { background: rgba(0,0,0,.1); }
+.rich-toolbar .sep { width: 1px; height: 16px; background: #9CA3AF; margin: 0 4px; }
+.rich-textarea {
+  padding: 12px 16px; font-size: 16px; font-family: inherit;
+  color: var(--text-primary); line-height: 1.6; min-height: 200px;
+  letter-spacing: 0.4px; white-space: pre-wrap;
+}
+.var-tag { color: #1C64F2; font-weight: 500; }
+.char-count-row { display: flex; justify-content: flex-end; }
+.ai-row { display: flex; gap: 8px; align-items: center; }
+.btn-icon-outline {
+  width: 36px; height: 36px; border: 1px solid var(--border-secondary); border-radius: 8px;
+  background: white; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text-secondary); transition: background .1s;
+}
+.btn-icon-outline:hover { background: var(--surface-tertiary); }
+.btn-tag {
+  border: 1px solid var(--border-secondary); border-radius: 8px; background: white;
+  padding: 8px 12px; font-size: 14px; font-weight: 500; color: var(--text-primary);
+  cursor: pointer; font-family: inherit;
+}
+
+/* FILE UPLOAD */
+.upload-area {
+  background: var(--surface-tertiary); border: 2px dashed var(--border-secondary);
+  border-radius: 8px; height: 160px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  cursor: pointer;
+}
+.upload-area:hover { border-color: #9CA3AF; }
+.upload-text { font-size: 14px; color: var(--text-secondary); text-align: center; }
+.upload-text strong { color: var(--text-primary); }
+.upload-hint { font-size: 12px; color: var(--text-secondary); text-align: center; line-height: 1.5; }
+.file-list-item { background: var(--surface-tertiary); border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; gap: 8px; }
+.progress-track { background: #E5E7EB; border-radius: 2px; height: 6px; overflow: hidden; margin-top: 4px; }
+.progress-fill { background: #1C64F2; height: 100%; border-radius: 2px; width: 25%; }
+.progress-label { font-size: 12px; color: var(--text-secondary); text-align: right; margin-top: 2px; }
+
+/* PREVIEW PANEL */
+.preview-panel-title { font-size: 18px; font-weight: 700; color: var(--text-heading); letter-spacing: 0.45px; }
+.preview-panel-bg { background: #F3F4F6; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 24px; flex: 1; }
+
+/* ── CONDITION MODAL ── */
+.condition-left { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 24px; }
+.condition-right {
+  width: 484px; flex-shrink: 0; background: white; border: 1px solid var(--border-secondary);
+  border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 20px; align-items: center;
+}
+.filter-card { background: white; border: 1px solid var(--border-secondary); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+.filter-card-title { font-size: 18px; font-weight: 700; color: var(--text-heading); line-height: 1.25; letter-spacing: 0.45px; }
+.radio-item { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.radio-circle {
+  width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--border-primary);
+  background: var(--surface-tertiary); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.radio-circle.checked { border-color: #1C64F2; background: #1C64F2; }
+.radio-circle.checked::after { content: ''; width: 6px; height: 6px; background: white; border-radius: 50%; }
+.radio-label { font-size: 14px; font-weight: 500; color: var(--text-label); letter-spacing: 0.35px; }
+.add-cat-btn { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 2px 0; }
+.add-cat-text { font-size: 14px; font-weight: 500; color: #76A9FA; letter-spacing: 0.35px; }
+.alert-box { background: var(--surface-tertiary); border: 1px solid var(--border-secondary); border-radius: 6px; padding: 16px; font-size: 14px; color: var(--text-primary); line-height: 1.5; }
+.alert-box-head { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 6px; font-weight: 700; font-size: 15px; }
+.alert-box ul { margin-left: 20px; }
+.alert-box li { margin-bottom: 2px; }
+.toggle-row { display: flex; align-items: flex-start; gap: 24px; }
+.toggle-label-wrap { flex: 1; }
+.toggle-label { font-size: 16px; color: var(--text-label); display: flex; align-items: center; gap: 4px; line-height: 1.25; }
+.toggle-sublabel { font-size: 14px; color: var(--text-secondary); line-height: 1.5; margin-top: 4px; }
+.toggle-switch { width: 44px; height: 24px; background: #1C64F2; border-radius: 40px; flex-shrink: 0; position: relative; cursor: pointer; }
+.toggle-switch::after { content: ''; position: absolute; width: 18px; height: 18px; background: white; border-radius: 50%; top: 3px; right: 3px; }
+
+/* DONUT */
+.donut-heading-title { font-size: 20px; font-weight: 700; color: var(--text-heading); display: flex; align-items: center; gap: 4px; }
+.donut-heading-sub { font-size: 14px; color: var(--text-secondary); margin-top: 4px; }
+.donut-wrap { position: relative; width: 200px; height: 200px; flex-shrink: 0; }
+.donut-wrap img { width: 100%; height: 100%; }
+.donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+.donut-number { font-size: 30px; font-weight: 700; color: var(--text-heading); }
+.donut-text { font-size: 14px; color: var(--text-primary); }
+.stats-grid { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; }
+.stat-item { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.stat-dot-row { display: flex; align-items: center; gap: 4px; }
+.stat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.stat-label { font-size: 14px; color: var(--text-secondary); }
+.stat-sublabel { font-size: 12px; color: var(--text-tertiary); text-align: center; }
+.stat-number { font-size: 24px; font-weight: 700; color: var(--text-primary); }
+
+/* ── RECIPIENT MODAL (Modal E) ── */
+.recip-modal { width: 960px; }
+.recip-search-row { display: flex; gap: 12px; align-items: center; }
+.recip-search {
+  flex: 1; display: flex; align-items: center; gap: 8px;
+  background: white; border: 1px solid var(--border-primary); border-radius: 8px;
+  padding: 10px 16px; font-size: 14px; color: var(--text-secondary);
+}
+.recip-tabs { display: flex; gap: 4px; }
+.recip-tab {
+  padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500;
+  color: var(--text-secondary); background: white; border: 1px solid transparent;
+  cursor: pointer; font-family: inherit;
+}
+.recip-tab.active { background: #EBF5FF; color: #1A56DB; border-color: #1A56DB; }
+.recip-table { border: 1px solid var(--border-secondary); border-radius: 8px; overflow: hidden; }
+.recip-table-head {
+  display: grid; grid-template-columns: 36px 1fr 130px 200px 140px;
+  background: #F9FAFB; padding: 10px 16px;
+  font-size: 12px; font-weight: 500; color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-secondary);
+}
+.recip-row {
+  display: grid; grid-template-columns: 36px 1fr 130px 200px 140px;
+  padding: 12px 16px; font-size: 14px; align-items: center;
+  border-bottom: 1px solid var(--border-secondary); transition: background .1s;
+}
+.recip-row:last-child { border-bottom: none; }
+.recip-row:hover { background: #FAFAFA; }
+.recip-checkbox { width: 16px; height: 16px; border-radius: 4px; border: 1px solid var(--border-primary); background: white; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.recip-checkbox.checked { background: #1A56DB; border-color: #1A56DB; }
+.recip-checkbox.checked::after { content: ''; display: block; width: 8px; height: 5px; border-left: 2px solid white; border-bottom: 2px solid white; transform: rotate(-45deg) translate(0px, -1px); }
+.recip-name { font-weight: 500; color: var(--text-primary); }
+.recip-phone { color: var(--text-secondary); font-size: 13px; }
+.recip-email { color: var(--text-secondary); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recip-tag { display: inline-flex; padding: 2px 8px; background: #EBF5FF; color: #1A56DB; border-radius: 99px; font-size: 12px; font-weight: 500; }
+.recip-summary { font-size: 14px; color: var(--text-secondary); }
+.recip-summary strong { color: var(--text-primary); font-weight: 700; }
+
+/* ── PROTO BADGE ── */
+.proto-badge {
+  position: fixed; bottom: 20px; right: 20px;
+  background: rgba(26,86,219,.9); color: white;
+  padding: 8px 16px; border-radius: 20px;
+  font-size: 12px; font-weight: 500; z-index: 999; backdrop-filter: blur(8px);
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════
+     SCREEN A — 主畫面
+═══════════════════════════════════════ -->
+<div class="screen active" id="screen-a">
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-text">1.<span>talk</span></div>
+      <!-- chevron-double-left -->
+      <span class="icon" style="color:#9CA3AF">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/></svg>
+      </span>
+    </div>
+    <div class="clinic-selector">
+      翔評大安診所
+      <span class="icon" style="color:#6B7280"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg></span>
+    </div>
+    <div class="nav-list">
+      <div class="nav-item">
+        <span class="icon nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+        首頁
+      </div>
+      <div class="nav-item">
+        <span class="icon nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+        自費預約
+        <span class="icon ml-auto" style="color:#9CA3AF"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg></span>
+      </div>
+      <div class="nav-item">
+        <span class="icon nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></span>
+        健保預約
+        <span class="icon ml-auto" style="color:#9CA3AF"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg></span>
+      </div>
+      <div class="nav-item active">
+        <span class="icon nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></span>
+        訊息中心
+        <span class="icon ml-auto" style="color:#1A56DB"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 15l7-7 7 7"/></svg></span>
+      </div>
+      <div class="nav-sub-item active">群發訊息</div>
+      <div class="nav-sub-item">個案追蹤</div>
+      <div class="nav-sub-item">廣告方案</div>
+      <div class="nav-sub-item">訊息範本庫</div>
+      <div class="nav-item">
+        <span class="icon nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+        評價中心
+        <span class="icon ml-auto" style="color:#9CA3AF"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg></span>
+      </div>
+      <div class="nav-item">
+        <span class="icon nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg></span>
+        行銷工具
+        <span class="icon ml-auto" style="color:#9CA3AF"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg></span>
+      </div>
+      <div class="nav-item">
+        <span class="icon nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg></span>
+        自動回應訊息
+      </div>
+      <div class="nav-item">
+        <span class="icon nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/><rect x="2" y="14" width="8" height="8" rx="1"/><path d="M14 14h4m0 0v4m0-4l-4 4"/></svg></span>
+        AI Agent
+        <span class="icon ml-auto" style="color:#9CA3AF"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 15l7-7 7 7"/></svg></span>
+      </div>
+      <div class="nav-sub-item">AI Agent 設定</div>
+      <div class="nav-sub-item">知識庫管理</div>
+      <div class="nav-item">
+        <span class="icon nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"/></svg></span>
+        整合中心
+      </div>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-avatar">蔡</div>
+      <div>
+        <div class="user-name">蔡依林</div>
+        <div class="user-role">管理員</div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div class="page-header">
+      <h1 class="page-title">群發訊息</h1>
+      <div class="header-actions">
+        <div class="search-input">
+          <span class="icon" style="color:#9CA3AF"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+          群發訊息名稱搜尋
+        </div>
+        <button class="btn btn-primary" onclick="goToScreenB()">
+          <span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+          新增
+        </button>
+      </div>
+    </div>
+
+    <div class="info-banner">
+      <span class="icon" style="color:#1C64F2; margin-top:1px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
+      <div class="info-banner-body">
+        <div class="info-banner-title">群發訊息</div>
+        <div class="info-banner-desc">群發訊息功能，可以透過條件設定多個接收對象。透過訊息範本填寫內容，系統會自動將這則訊息發送給所有選定的對象。可以選擇排程或是立即發送，確保訊息傳達給大範圍的受眾。</div>
+        <div class="info-banner-link">
+          <span class="icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
+          瞭解更多
+        </div>
+      </div>
+      <span class="icon info-banner-close" style="color:#9CA3AF"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+    </div>
+
+    <div class="filter-bar">
+      <div class="filter-btn">
+        <span class="icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg></span>
+        狀態
+      </div>
+    </div>
+
+    <div class="data-table">
+      <div class="table-header">
+        <span>個案追蹤名稱</span><span>對象</span><span>狀態</span>
+        <span>預估傳送人數</span><span>最後更新時間</span><span>發送時間</span>
+      </div>
+      <div class="table-row clickable" onclick="goToScreenB()">
+        <span class="row-name">臨時休診通知</span>
+        <span class="row-target">全部會員</span>
+        <span><span class="badge badge-draft">草稿</span></span>
+        <span style="color:var(--text-secondary)">—</span>
+        <span class="row-time">2025/06/07<br>14:39</span>
+        <span class="row-time">2025/09/05<br>15:50</span>
+      </div>
+      <div class="table-row">
+        <span>240604_水飛梭</span><span class="row-target">全部會員</span>
+        <span><span class="badge badge-scheduled">排程中</span></span>
+        <span style="color:var(--text-secondary)">—</span>
+        <span class="row-time">2025/06/07<br>10:00</span><span class="row-time">2025/07/10<br>12:00</span>
+      </div>
+      <div class="table-row">
+        <span>240604_皮秒雷射療程</span><span class="row-target">雷射嫩膚</span>
+        <span><span class="badge badge-scheduled">排程中</span></span>
+        <span style="color:var(--text-secondary)">—</span>
+        <span class="row-time">2025/06/04<br>9:30</span><span class="row-time">2025/07/01<br>12:00</span>
+      </div>
+      <div class="table-row">
+        <span>240527_美白注射療程</span><span class="row-target">全部會員</span>
+        <span><span class="badge badge-sent">已發送</span></span>
+        <span>734</span>
+        <span class="row-time">2025/05/27<br>17:37</span><span class="row-time">2025/07/15<br>16:22</span>
+      </div>
+      <div class="table-row">
+        <span>A酸療程</span><span class="row-target">全部會員</span>
+        <span><span class="badge badge-scheduled">排程中</span></span>
+        <span style="color:var(--text-secondary)">—</span>
+        <span class="row-time">2025/05/27<br>12:35</span><span class="row-time">2025/07/15<br>13:45</span>
+      </div>
+      <div class="table-row">
+        <span>玻尿酸填充</span><span class="row-target">無痕除皺</span>
+        <span><span class="badge badge-sent">已發送</span></span>
+        <span>114</span>
+        <span class="row-time">2025/05/13<br>19:32</span><span class="row-time">2025/06/12<br>18:05</span>
+      </div>
+      <div class="table-row">
+        <span>水光針</span><span class="row-target">無痕除皺</span>
+        <span><span class="badge badge-scheduled">排程中</span></span>
+        <span style="color:var(--text-secondary)">—</span>
+        <span class="row-time">2025/05/10<br>10:11</span><span class="row-time">2025/06/15<br>09:55</span>
+      </div>
+      <div class="table-row">
+        <span>肉毒桿菌注射</span><span class="row-target">全部會員</span>
+        <span><span class="badge badge-draft">草稿</span></span>
+        <span style="color:var(--text-secondary)">—</span>
+        <span class="row-time">2025/05/02<br>10:00</span><span class="row-time">2025/06/20<br>11:30</span>
+      </div>
+      <div class="table-row">
+        <span>嘟嘟唇注射</span><span class="row-target">全部會員</span>
+        <span><span class="badge badge-sent">已發送</span></span>
+        <span>1</span>
+        <span class="row-time">2025/05/02<br>09:00</span><span class="row-time">2025/06/20<br>08:30</span>
+      </div>
+      <div class="table-row">
+        <span>自費諮詢</span><span class="row-target">全部會員</span>
+        <span><span class="badge badge-sent">已發送</span></span>
+        <span>1</span>
+        <span class="row-time">2025/05/02<br>08:00</span><span class="row-time">2025/06/20<br>07:15</span>
+      </div>
+      <div class="pagination">
+        <span>單頁顯示數量 20 ▾ &nbsp;&nbsp; 第 1–20 筆，共 1200 筆</span>
+        <div class="page-controls">
+          <button class="page-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 19l-7-7 7-7"/></svg></button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn">2</button>
+          <button class="page-btn">3</button>
+          <button class="page-btn">4</button>
+          <button class="page-btn">5</button>
+          <button class="page-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     SCREEN B — 編輯群發訊息
+═══════════════════════════════════════ -->
+<div class="screen" id="screen-b">
+  <div class="edit-page">
+    <div class="edit-page-header">
+      <button class="back-btn" onclick="goToScreenA()">
+        <span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg></span>
+      </button>
+      <h1 class="edit-page-title">編輯群發訊息</h1>
+    </div>
+
+    <div class="edit-content">
+
+      <!-- 1. 群發訊息名稱 -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">群發訊息名稱</div></div>
+        <div class="input-wrapper">
+          <div class="field-label">名稱<span class="required">*</span></div>
+          <input class="input-field" type="text" value="臨時休診通知" maxlength="20">
+          <div class="char-count">7/20</div>
+        </div>
+      </div>
+
+      <!-- 2. 訊息範本 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">訊息範本</div>
+          <button class="edit-btn">
+            <span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></span>
+            編輯
+          </button>
+        </div>
+        <div class="card-value">&nbsp;</div>
+      </div>
+
+      <!-- 3. 預覽訊息 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">預覽訊息</div>
+          <button class="edit-btn" onclick="openModal('modal-c')">
+            <span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></span>
+            編輯
+          </button>
+        </div>
+        <div class="preview-box">
+          <div class="email-preview-card">
+            <div class="email-meta"><span class="label">寄件人</span><span>寄件團隊 &lt;noreply@alleypin.cc&gt;</span></div>
+            <div class="email-meta"><span class="label">收件人</span><span>receiver@gmail.com</span></div>
+            <div class="email-divider"></div>
+            <div class="email-subject">[アリピンクリニック] 台風接近に伴う臨時休診のお知らせ</div>
+            <div class="email-divider"></div>
+            <div class="email-body"><span class="var-tag">{姓名}</span> 親愛的顧客您好，
+
+感謝您一直以來對本診所的支持與愛護。
+由於颱風即將接近，為確保您與員工的安全，本診所將視颱風動態調整診療時間，可能進行臨時休診。
+
+造成您的不便，我們深感抱歉。最新的診療資訊將持續透過 LINE 及官方網站更新，請您隨時留意。
+
+如有任何疑問，歡迎隨時與我們聯繫，我們將竭誠為您服務。
+
+<strong>團隊 敬上</strong></div>
+          </div>
+          <div class="image-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+              <span style="font-size:18px;font-weight:700">圖片</span>
+              <div style="display:flex;gap:2px">
+                <button class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 15l7-7 7 7"/></svg></button>
+                <button class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg></button>
+                <button class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>
+              </div>
+            </div>
+            <img src="https://www.figma.com/api/mcp/asset/e1f34657-7628-4572-814e-a43a68d7b6ad" alt="preview" style="width:100%;height:160px;object-fit:cover;border-radius:8px;display:block">
+          </div>
+          <div class="file-item">
+            <span class="icon file-action"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
+            <span class="file-name">template01.docx</span>
+            <span class="file-size">1.2 MB</span>
+            <span class="icon file-action"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>
+            <span class="icon file-action"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg></span>
+          </div>
+          <div class="file-item">
+            <span class="icon file-action"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
+            <span class="file-name">template02.pdf</span>
+            <span class="file-size">2.1 MB</span>
+            <span class="icon file-action"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>
+            <span class="icon file-action"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. 發送條件 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">發送條件</div>
+          <button class="edit-btn" onclick="openModal('modal-d')">
+            <span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></span>
+            編輯
+          </button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:24px">
+          <div class="condition-row"><span class="condition-label">傳送對象</span><span class="condition-value">全部會員</span></div>
+          <div class="condition-row"><span class="condition-label">合併寄送訊息</span><span class="condition-value">開啟</span></div>
+          <div class="condition-row"><span class="condition-label">發送數量</span><span class="condition-value">734/734</span></div>
+        </div>
+      </div>
+
+      <!-- 5. 發送時間 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">發送時間</div>
+          <button class="edit-btn">
+            <span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></span>
+            編輯
+          </button>
+        </div>
+        <div class="card-value">立即發送</div>
+      </div>
+
+      <!-- 6. 發送名單 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">發送名單</div>
+          <button class="edit-btn" onclick="openModal('modal-e')">
+            <span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></span>
+            編輯
+          </button>
+        </div>
+        <div class="card-value">734 人</div>
+      </div>
+
+      <!-- Actions -->
+      <div class="edit-actions">
+        <button class="btn btn-outline" onclick="goToScreenA()">取消</button>
+        <button class="btn btn-outline-primary">儲存草稿</button>
+        <button class="btn btn-primary">發送訊息</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     MODAL C — 編輯預覽訊息
+═══════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-c">
+  <div class="modal">
+    <div class="modal-header">
+      <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;justify-content:center">
+          <div class="tab-group">
+            <button class="tab-btn">LINE</button>
+            <button class="tab-btn active">電子郵件</button>
+            <button class="tab-btn">簡訊</button>
+          </div>
+        </div>
+        <div class="modal-title">電子郵件</div>
+      </div>
+      <button class="modal-close-btn" onclick="closeModal('modal-c')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="modal-2col">
+      <!-- Left -->
+      <div class="modal-left">
+        <!-- 標題 -->
+        <div class="modal-section">
+          <div class="modal-section-header">
+            <span class="modal-section-title">標題<span class="required-star">*</span></span>
+          </div>
+          <div>
+            <input class="input-field" style="width:100%" type="text" value="[アリピンクリニック] 台風接近に伴う臨時休診のお知らせ">
+            <div class="char-count">6/40</div>
+          </div>
+        </div>
+
+        <!-- 內容 -->
+        <div class="modal-section">
+          <div class="modal-section-header">
+            <span class="modal-section-title">內容<span class="required-star">*</span></span>
+            <div class="section-actions">
+              <button class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 15l7-7 7 7"/></svg></button>
+              <button class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg></button>
+              <button class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button>
+            </div>
+          </div>
+          <div>
+            <div class="rich-textarea-wrapper">
+              <div class="rich-toolbar">
+                <span class="tool" style="font-weight:800">B</span>
+                <span class="tool" style="font-style:italic">I</span>
+                <span class="tool" style="text-decoration:underline">U</span>
+                <span class="sep"></span>
+                <span class="tool"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="12" x2="3" y2="12"/><line x1="21" y1="18" x2="3" y2="18"/></svg></span>
+                <span class="tool"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="6" x2="3" y2="6"/><line x1="15" y1="12" x2="3" y2="12"/><line x1="17" y1="18" x2="3" y2="18"/></svg></span>
+                <span class="tool"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="6" x2="9" y2="6"/><line x1="21" y1="12" x2="9" y2="12"/><line x1="21" y1="18" x2="9" y2="18"/><line x1="5" y1="6" x2="3" y2="6"/><line x1="5" y1="12" x2="3" y2="12"/><line x1="5" y1="18" x2="3" y2="18"/></svg></span>
+                <span class="sep"></span>
+                <span class="tool"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span>
+                <span class="sep"></span>
+                <span class="tool" style="font-size:11px;font-weight:700">Aa</span>
+                <span class="tool"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 011.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg></span>
+              </div>
+              <div class="rich-textarea">
+<span class="var-tag">{姓名}</span> 親愛的顧客您好，
+
+感謝您一直以來對本診所的支持與愛護。
+由於颱風即將接近，為確保您與員工的安全，本診所將視颱風動態調整診療時間，可能進行臨時休診。
+
+造成您的不便，我們深感抱歉。最新的診療資訊將持續透過 LINE 及官方網站更新，請您隨時留意。
+
+如有任何疑問，歡迎隨時與我們聯繫，我們將竭誠為您服務。
+
+<strong>團隊 敬上</strong></div>
+            </div>
+            <div class="char-count-row" style="margin-top:4px"><span style="font-size:14px;color:var(--text-secondary)">0/400</span></div>
+          </div>
+          <div class="ai-row">
+            <button class="btn-icon-outline">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+            </button>
+            <button class="btn-tag">姓名</button>
+          </div>
+        </div>
+
+        <!-- 附件 -->
+        <div class="modal-section">
+          <div class="modal-section-header">
+            <span class="modal-section-title">附件</span>
+            <div class="section-actions">
+              <button class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 15l7-7 7 7"/></svg></button>
+              <button class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg></button>
+              <button class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button>
+            </div>
+          </div>
+          <div class="upload-area">
+            <span class="icon" style="color:#9CA3AF"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg></span>
+            <div class="upload-text"><strong>點擊上傳</strong> 或拖曳檔案至此</div>
+            <div class="upload-hint">支援格式 pdf、word、gif、jpeg、png、zip，<br>可附多個檔案，總計 10MB 以下</div>
+          </div>
+          <div>
+            <div class="file-list-item">
+              <span class="icon" style="color:#6B7280"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
+              <span style="flex:1;font-size:15px;font-weight:500;color:var(--text-secondary)">template.docx</span>
+              <span style="font-size:14px;color:var(--text-tertiary)">1.2 MB</span>
+              <span class="icon" style="color:#9CA3AF"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>
+              <span class="icon" style="color:#9CA3AF"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></span>
+            </div>
+            <div class="progress-track"><div class="progress-fill"></div></div>
+            <div class="progress-label">1.2 MB/10MB</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Preview -->
+      <div class="modal-right">
+        <div class="preview-panel-title">預覽訊息</div>
+        <div class="preview-panel-bg">
+          <div class="email-preview-card">
+            <div class="email-meta"><span class="label">寄件人</span><span>寄件團隊 &lt;noreply@alleypin.cc&gt;</span></div>
+            <div class="email-meta"><span class="label">收件人</span><span>receiver@gmail.com</span></div>
+            <div class="email-divider"></div>
+            <div class="email-subject">[アリピンクリニック] 台風接近に伴う臨時休診のお知らせ</div>
+            <div class="email-divider"></div>
+            <div class="email-body"><span class="var-tag">{姓名}</span> 親愛的顧客您好，
+
+感謝您一直以來對本診所的支持與愛護。
+由於颱風即將接近，為確保您與員工的安全，本診所將視颱風動態調整診療時間，可能進行臨時休診。
+
+<strong>團隊 敬上</strong></div>
+          </div>
+          <div class="image-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <span style="font-size:17px;font-weight:700">圖片</span>
+              <div style="display:flex;gap:2px">
+                <button class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 15l7-7 7 7"/></svg></button>
+                <button class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg></button>
+                <button class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button>
+              </div>
+            </div>
+            <img src="https://www.figma.com/api/mcp/asset/354de100-7a92-416b-bcb3-8e53cfb7aa1c" alt="preview" style="width:100%;height:180px;object-fit:cover;border-radius:8px;display:block">
+          </div>
+          <div class="file-item" style="background:white;border-radius:8px">
+            <span class="icon" style="color:#6B7280"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
+            <span class="file-name">template01.docx</span><span class="file-size">1.2 MB</span>
+            <span class="icon file-action"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>
+            <span class="icon file-action"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></span>
+          </div>
+          <div class="file-item" style="background:white;border-radius:8px">
+            <span class="icon" style="color:#6B7280"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
+            <span class="file-name">template02.pdf</span><span class="file-size">2.1 MB</span>
+            <span class="icon file-action"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>
+            <span class="icon file-action"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-c')">取消</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-c')">儲存</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     MODAL D — 編輯發送條件
+═══════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-d">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">發送條件</span>
+      <button class="modal-close-btn" onclick="closeModal('modal-d')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="modal-2col">
+      <div class="condition-left">
+        <div class="filter-card">
+          <div class="filter-card-title">選擇傳送對象</div>
+          <div class="radio-item"><div class="radio-circle checked"></div><span class="radio-label">全部會員</span></div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div class="radio-item"><div class="radio-circle"></div><span class="radio-label">選擇</span></div>
+            <div class="add-cat-btn">
+              <span class="icon" style="color:#76A9FA"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span>
+              <span class="add-cat-text">增加類別</span>
+            </div>
+          </div>
+        </div>
+        <div class="filter-card">
+          <div class="filter-card-title">發送方式說明</div>
+          <div class="alert-box">
+            系統會依據會員是否綁定 LINE，自動選擇最適合的通道發送訊息：<br>
+            ✔ 已加入 LINE 好友的會員，將透過 LINE 接收訊息<br>
+            ✉️ 未加入或封鎖 LINE 好友的會員，系統將自動以 郵件（優先）與簡訊發送
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-label-wrap">
+              <div class="toggle-label">
+                合併寄送訊息
+                <span class="icon" style="color:#9CA3AF"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
+              </div>
+              <div class="toggle-sublabel">若多位家庭成員綁定相同 LINE 帳號或手機號碼時，系統將合併為一則 LINE 訊息或簡訊發送</div>
+            </div>
+            <div class="toggle-switch"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="condition-right">
+        <div style="width:100%">
+          <div class="donut-heading-title">預估分眾人數 <span class="icon" style="color:#9CA3AF"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span></div>
+          <div class="donut-heading-sub">總目標對象：734</div>
+        </div>
+        <div class="donut-wrap">
+          <img src="https://www.figma.com/api/mcp/asset/574f4929-1411-412d-957a-7236bd64fea1" alt="donut">
+          <div class="donut-center"><div class="donut-number">634</div><div class="donut-text">預計發送</div></div>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-item"><div><div class="stat-dot-row"><div class="stat-dot" style="background:#10B981"></div><span class="stat-label">LINE 發送</span></div><div class="stat-sublabel">加入好友</div></div><div class="stat-number">234</div></div>
+          <div class="stat-item"><div><div class="stat-dot-row"><div class="stat-dot" style="background:#8B5CF6"></div><span class="stat-label">郵件發送</span></div><div class="stat-sublabel">未加好友但有郵件</div></div><div class="stat-number">100</div></div>
+          <div class="stat-item"><div><div class="stat-dot-row"><div class="stat-dot" style="background:#3B82F6"></div><span class="stat-label">簡訊發送</span></div><div class="stat-sublabel">未加好友但有手機</div></div><div class="stat-number">300</div></div>
+          <div class="stat-item"><div><div class="stat-dot-row"><div class="stat-dot" style="background:#D1D5DB"></div><span class="stat-label">無法發送</span></div><div class="stat-sublabel">未加好友+無手機號</div></div><div class="stat-number">100</div></div>
+        </div>
+        <div class="alert-box" style="width:100%">
+          <div class="alert-box-head"><span class="icon" style="color:#6B7280"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>為何預估人數與實際發送人數會不同？</div>
+          <ul>
+            <li>發送前若新增符合條件的會員，會自動加入名單</li>
+            <li>會員在發送前已封鎖 LINE，無法收到訊息</li>
+            <li>會員手機號碼格式錯誤，導致發送失敗</li>
+            <li>會員電子信箱格式錯誤，導致發送失敗</li>
+            <li>未填寫簡訊內容時，系統不會發送簡訊</li>
+            <li>未填寫電子信箱內容時，系統不會發送郵件</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-d')">取消</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-d')">儲存</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════
+     MODAL E — 編輯發送名單
+═══════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-e">
+  <div class="modal recip-modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">發送名單</div>
+        <div style="font-size:14px;color:var(--text-secondary);margin-top:4px">已選擇 <strong style="color:var(--text-primary)">734</strong> 人（全部會員）</div>
+      </div>
+      <button class="modal-close-btn" onclick="closeModal('modal-e')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- Search + Tabs -->
+    <div class="recip-search-row">
+      <div class="recip-search">
+        <span class="icon" style="color:#9CA3AF"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+        <span style="color:#9CA3AF">搜尋姓名、電話或 Email</span>
+      </div>
+      <div class="recip-tabs">
+        <button class="recip-tab active">全部（734）</button>
+        <button class="recip-tab">已選（734）</button>
+        <button class="recip-tab">排除（0）</button>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="recip-table">
+      <div class="recip-table-head">
+        <div><div class="recip-checkbox checked"></div></div>
+        <span>姓名</span><span>電話</span><span>Email</span><span>標籤</span>
+      </div>
+      <div class="recip-row">
+        <div><div class="recip-checkbox checked"></div></div>
+        <span class="recip-name">陳小明</span>
+        <span class="recip-phone">0912-345-678</span>
+        <span class="recip-email">chen.ming@gmail.com</span>
+        <span><span class="recip-tag">全部會員</span></span>
+      </div>
+      <div class="recip-row">
+        <div><div class="recip-checkbox checked"></div></div>
+        <span class="recip-name">林美華</span>
+        <span class="recip-phone">0923-456-789</span>
+        <span class="recip-email">lin.meihua@yahoo.com.tw</span>
+        <span><span class="recip-tag">全部會員</span></span>
+      </div>
+      <div class="recip-row">
+        <div><div class="recip-checkbox checked"></div></div>
+        <span class="recip-name">王大偉</span>
+        <span class="recip-phone">0934-567-890</span>
+        <span class="recip-email">wang.dawei@outlook.com</span>
+        <span><span class="recip-tag">全部會員</span></span>
+      </div>
+      <div class="recip-row">
+        <div><div class="recip-checkbox checked"></div></div>
+        <span class="recip-name">張芳芳</span>
+        <span class="recip-phone">0945-678-901</span>
+        <span class="recip-email">zhang.fangfang@gmail.com</span>
+        <span><span class="recip-tag">全部會員</span></span>
+      </div>
+      <div class="recip-row">
+        <div><div class="recip-checkbox checked"></div></div>
+        <span class="recip-name">李建志</span>
+        <span class="recip-phone">0956-789-012</span>
+        <span class="recip-email">li.jianzhi@gmail.com</span>
+        <span><span class="recip-tag">全部會員</span></span>
+      </div>
+      <div class="recip-row">
+        <div><div class="recip-checkbox checked"></div></div>
+        <span class="recip-name">黃淑芬</span>
+        <span class="recip-phone">0967-890-123</span>
+        <span class="recip-email">huang.shufen@icloud.com</span>
+        <span><span class="recip-tag">全部會員</span></span>
+      </div>
+      <div class="recip-row">
+        <div><div class="recip-checkbox checked"></div></div>
+        <span class="recip-name">劉俊豪</span>
+        <span class="recip-phone">0978-901-234</span>
+        <span class="recip-email">liu.junhao@gmail.com</span>
+        <span><span class="recip-tag">全部會員</span></span>
+      </div>
+      <div class="recip-row">
+        <div><div class="recip-checkbox checked"></div></div>
+        <span class="recip-name">吳雅婷</span>
+        <span class="recip-phone">0989-012-345</span>
+        <span class="recip-email">wu.yating@yahoo.com.tw</span>
+        <span><span class="recip-tag">全部會員</span></span>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div class="recip-summary">顯示 <strong>1–8</strong> 筆，共 <strong>734</strong> 筆</div>
+      <div class="page-controls">
+        <button class="page-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 19l-7-7 7-7"/></svg></button>
+        <button class="page-btn active">1</button>
+        <button class="page-btn">2</button>
+        <button class="page-btn">3</button>
+        <button class="page-btn">…</button>
+        <button class="page-btn">92</button>
+        <button class="page-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-e')">取消</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-e')">儲存</button>
+    </div>
+  </div>
+</div>
+
+<div class="proto-badge">🖱 Prototype</div>
+
+<script>
+function goToScreenA() {
+  document.getElementById('screen-a').classList.add('active');
+  document.getElementById('screen-b').classList.remove('active');
+  window.scrollTo(0, 0);
+}
+function goToScreenB() {
+  document.getElementById('screen-a').classList.remove('active');
+  document.getElementById('screen-b').classList.add('active');
+  window.scrollTo(0, 0);
+}
+function openModal(id) {
+  document.getElementById(id).classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('active');
+  // close body overflow only if no other modal is open
+  if (!document.querySelector('.modal-overlay.active')) {
+    document.body.style.overflow = '';
+  }
+}
+// Click overlay backdrop to close
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) closeModal(el.id); });
+});
+// ESC key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.active').forEach(el => closeModal(el.id));
+  }
+});
+</script>
+</body>
+</html>
