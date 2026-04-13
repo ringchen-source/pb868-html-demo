@@ -193,6 +193,7 @@ body { font-family: 'Noto Sans TC', sans-serif; background: #F9FAFB; color: var(
 #wysiwyg-example ol { padding-left: 20px; list-style: decimal; }
 #wysiwyg-example blockquote { border-left: 3px solid #D1D5DB; padding-left: 12px; color: #6B7280; }
 #wysiwyg-example hr { border: none; border-top: 1px solid #E5E7EB; margin: 12px 0; }
+#wysiwyg-example img { max-width: 240px; max-height: 180px; object-fit: contain; border-radius: 4px; display: inline-block; }
 /* ── Email hover tooltip in Modal E ── */
 .ftd-email-wrap { position: relative; max-width: 100%; }
 .ftd-email-text { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary); cursor: default; max-width: 100%; }
@@ -551,7 +552,7 @@ body { font-family: 'Noto Sans TC', sans-serif; background: #F9FAFB; color: var(
         <div class="modal-section">
           <div class="modal-section-header"><span class="modal-section-title">標題<span class="required-star">*</span></span></div>
           <div><input id="subject-input" class="input-field" style="width:100%" type="text" value="[アリピンクリニック] 台風接近に伴う臨時休診のお知らせ"><div class="char-count">6/40</div></div>
-          <div class="modal-section-header"><span class="modal-section-title">內容<span class="required-star">*</span></span><div class="section-actions"><button class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 15l7-7 7 7"/></svg></button><button class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg></button><button class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button></div></div>
+          <div class="modal-section-header"><span class="modal-section-title">內容<span class="required-star">*</span></span></div>
           <div>
             <div class="editor-wrap" id="email-editor-wrap">
               <!-- Toolbar Row 1 -->
@@ -614,7 +615,7 @@ body { font-family: 'Noto Sans TC', sans-serif; background: #F9FAFB; color: var(
             <div class="progress-label" style="text-align:right;margin-top:4px" id="progress-label">已使用 1.2 MB / 10 MB</div>
           </div>
           <!-- Hidden file inputs -->
-          <input type="file" id="editor-image-upload" accept="image/*" style="display:none">
+          <input type="file" id="att-image-upload" accept="image/*" style="display:none">
           <input type="file" id="doc-upload" accept=".pdf,.docx,.xlsx,.doc,.zip,.jpg,.png,.jpeg" style="display:none">
         </div>
       </div>
@@ -930,15 +931,8 @@ document.getElementById('toggleOrderedListButton').addEventListener('click', () 
 document.getElementById('toggleBlockquoteButton').addEventListener('click', () => editor.chain().focus().toggleBlockquote().run());
 document.getElementById('toggleHRButton').addEventListener('click', () => editor.chain().focus().setHorizontalRule().run());
 document.getElementById('addImageButton').addEventListener('click', () => {
-  document.getElementById('editor-image-upload').click();
-});
-document.getElementById('editor-image-upload').addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => editor.chain().focus().setImage({ src: ev.target.result }).run();
-  reader.readAsDataURL(file);
-  e.target.value = '';
+  const inp = document.getElementById('att-image-upload');
+  if (inp) inp.click();
 });
 document.getElementById('addVideoButton').addEventListener('click', () => {
   document.getElementById('doc-upload').click();
@@ -1143,6 +1137,20 @@ function deleteAttachment(id) {
   renderPreviewAttachments();
   updateProgress();
 }
+
+/* ── Image upload → attachment area ── */
+document.getElementById('att-image-upload').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const sizeMB = file.size / (1024 * 1024);
+  const reader = new FileReader();
+  reader.onload = ev => {
+    attachments.push({ id: nextAttId++, type: 'image', name: file.name, src: ev.target.result, size: sizeMB });
+    renderAttachmentList(); renderPreviewAttachments(); updateProgress();
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+});
 
 /* ── Doc upload → attachment area ── */
 document.getElementById('doc-upload').addEventListener('change', function(e) {
