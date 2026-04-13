@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>群發訊息 Prototype v4</title>
+<title>群發訊息 Prototype v5</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -132,6 +132,7 @@ body { font-family: 'Noto Sans TC', sans-serif; background: #F9FAFB; color: var(
 .email-divider { height: 1px; background: var(--border-secondary); margin: 8px 0; }
 .email-subject { font-size: 15px; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
 .email-body { font-size: 15px; color: var(--text-primary); line-height: 1.6; }
+.email-body img { max-width: 100%; max-height: 240px; object-fit: contain; border-radius: 4px; display: block; margin: 4px 0; }
 .email-body p { margin-bottom: 8px; }
 .email-body strong { font-weight: 700; }
 .email-body ul { padding-left: 20px; list-style: disc; }
@@ -193,7 +194,7 @@ body { font-family: 'Noto Sans TC', sans-serif; background: #F9FAFB; color: var(
 #wysiwyg-example ol { padding-left: 20px; list-style: decimal; }
 #wysiwyg-example blockquote { border-left: 3px solid #D1D5DB; padding-left: 12px; color: #6B7280; }
 #wysiwyg-example hr { border: none; border-top: 1px solid #E5E7EB; margin: 12px 0; }
-#wysiwyg-example img { max-width: 240px; max-height: 180px; object-fit: contain; border-radius: 4px; display: inline-block; }
+#wysiwyg-example img { max-width: 100%; max-height: 320px; object-fit: contain; border-radius: 4px; display: block; margin: 4px 0; }
 /* ── Email hover tooltip in Modal E ── */
 .ftd-email-wrap { position: relative; max-width: 100%; }
 .ftd-email-text { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary); cursor: default; max-width: 100%; }
@@ -214,7 +215,7 @@ body { font-family: 'Noto Sans TC', sans-serif; background: #F9FAFB; color: var(
 .progress-fill { background: #1C64F2; height: 100%; border-radius: 2px; width: 25%; }
 .progress-label { font-size: 12px; color: var(--text-secondary); text-align: right; margin-top: 2px; }
 .preview-panel-title { font-size: 18px; font-weight: 700; color: var(--text-heading); letter-spacing: 0.45px; }
-.preview-panel-bg { background: #F3F4F6; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 24px; flex: 1; }
+.preview-panel-bg { background: #F3F4F6; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 24px; flex: 1; overflow-y: auto; max-height: calc(90vh - 160px); }
 .condition-left { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 24px; }
 .condition-right { width: 484px; flex-shrink: 0; background: white; border: 1px solid var(--border-secondary); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 20px; align-items: center; }
 .filter-card { background: white; border: 1px solid var(--border-secondary); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
@@ -411,23 +412,13 @@ body { font-family: 'Noto Sans TC', sans-serif; background: #F9FAFB; color: var(
         <div class="card-header"><div class="card-title">預覽訊息</div><button class="edit-btn" onclick="openModal('modal-c')"><span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></span>編輯</button></div>
         <div class="preview-box">
           <div class="email-preview-card">
-            <div class="email-meta"><span class="label">寄件人</span><span>寄件團隊 &lt;noreply@alleypin.cc&gt;</span></div>
+            <div class="email-meta"><span class="label">寄件人</span><span>{診所名稱} &lt;noreply@alleypin.cc&gt;</span></div>
             <div class="email-divider"></div>
-            <div class="email-subject">[アリピンクリニック] 台風接近に伴う臨時休診のお知らせ</div>
+            <div class="email-subject" id="screen-b-preview-subject">[アリピンクリニック] 台風接近に伴う臨時休診のお知らせ</div>
             <div class="email-divider"></div>
-            <div class="email-body"><span class="var-tag">{姓名}</span> 親愛的顧客您好，
-
-感謝您一直以來對本診所的支持與愛護。
-由於颱風即將接近，為確保您與員工的安全，本診所將視颱風動態調整診療時間，可能進行臨時休診。
-
-造成您的不便，我們深感抱歉。最新的診療資訊將持續透過 LINE 及官方網站更新，請您隨時留意。
-
-<strong>團隊 敬上</strong></div>
+            <div class="email-body" id="screen-b-preview-body"><p><span class="var-tag">{姓名}</span> 親愛的顧客您好，</p><p>感謝您一直以來對本診所的支持與愛護。<br>由於颱風即將接近，為確保您與員工的安全，本診所將視颱風動態調整診療時間，可能進行臨時休診。</p><p>造成您的不便，我們深感抱歉。最新的診療資訊將持續透過 LINE 及官方網站更新，請您隨時留意。</p><p>如有任何疑問，歡迎隨時與我們聯繫，我們將竭誠為您服務。</p><p><strong>團隊 敬上</strong></p></div>
           </div>
-          <div class="file-item"><span class="icon file-action"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span><span class="file-name">template01.docx</span><span class="file-size">1.2 MB</span></div>
-          <div class="image-card">
-            <img src="https://images.unsplash.com/photo-1576671081837-49000212a370?w=600&q=80" alt="preview" style="width:100%;height:160px;object-fit:cover;border-radius:8px;display:block">
-          </div>
+          <div id="screen-b-attachment-area"></div>
         </div>
       </div>
       <div class="card">
@@ -484,7 +475,7 @@ body { font-family: 'Noto Sans TC', sans-serif; background: #F9FAFB; color: var(
         <div class="card-header"><div class="card-title">預覽訊息</div><button class="edit-btn" onclick="openModal('modal-c')"><span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></span>編輯</button></div>
         <div class="preview-box">
           <div class="email-preview-card">
-            <div class="email-meta"><span class="label">寄件人</span><span>寄件團隊 &lt;noreply@alleypin.cc&gt;</span></div>
+            <div class="email-meta"><span class="label">寄件人</span><span>{診所名稱} &lt;noreply@alleypin.cc&gt;</span></div>
             <div class="email-divider"></div>
             <div class="email-subject">[アリピンクリニック] 台風接近に伴う臨時休診のお知らせ</div>
             <div class="email-divider"></div>
@@ -550,7 +541,7 @@ body { font-family: 'Noto Sans TC', sans-serif; background: #F9FAFB; color: var(
     <div class="modal-2col">
       <div class="modal-left">
         <div class="modal-section">
-          <div class="modal-section-header"><span class="modal-section-title">標題<span class="required-star">*</span></span></div>
+          <div class="modal-section-header"><span class="modal-section-title">主旨<span class="required-star">*</span></span></div>
           <div><input id="subject-input" class="input-field" style="width:100%" type="text" value="[アリピンクリニック] 台風接近に伴う臨時休診のお知らせ"><div class="char-count">6/40</div></div>
           <div class="modal-section-header"><span class="modal-section-title">內容<span class="required-star">*</span></span></div>
           <div>
@@ -577,7 +568,7 @@ body { font-family: 'Noto Sans TC', sans-serif; background: #F9FAFB; color: var(
                 <button id="typographyDropdownButton" type="button" class="etool etool-format" data-dropdown-toggle="typographyDropdown">Format <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:2px"><path d="m19 9-7 7-7-7"/></svg></button>
                 <span class="etool-sep"></span>
                 <button id="addImageButton" type="button" class="etool" title="插入圖片"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 16 5-7 6 6.5m6.5 2.5L16 13l-4.286 6M14 10h.01M4 19h16a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1Z"/></svg></button>
-                <button id="addVideoButton" type="button" class="etool" title="插入影片"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v4a1 1 0 0 1-1 1H5m14-4v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1ZM9 12h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1Zm5.697 2.395v-.733l1.269-1.219v2.984l-1.268-1.032Z"/></svg></button>
+                <button id="addVideoButton" type="button" class="etool" title="新增附件"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></button>
                 <button id="toggleListButton" type="button" class="etool" title="項目清單"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 8h10M9 12h10M9 16h10M4.99 8H5m-.02 4h.01m0 4H5"/></svg></button>
                 <button id="toggleOrderedListButton" type="button" class="etool" title="編號清單"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6h8m-8 6h8m-8 6h8M4 16a2 2 0 1 1 3.321 1.5L4 20h5M4 5l2-1v6m-2 0h4"/></svg></button>
                 <button id="toggleBlockquoteButton" type="button" class="etool" title="引言"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 11V8a1 1 0 0 0-1-1H6a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1Zm0 0v2a4 4 0 0 1-4 4H5m14-6V8a1 1 0 0 0-1-1h-3a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1Zm0 0v2a4 4 0 0 1-4 4h-1"/></svg></button>
@@ -616,6 +607,7 @@ body { font-family: 'Noto Sans TC', sans-serif; background: #F9FAFB; color: var(
           </div>
           <!-- Hidden file inputs -->
           <input type="file" id="att-image-upload" accept="image/*" style="display:none">
+          <input type="file" id="editor-image-upload" accept="image/*" style="display:none">
           <input type="file" id="doc-upload" accept=".pdf,.docx,.xlsx,.doc,.zip,.jpg,.png,.jpeg" style="display:none">
         </div>
       </div>
@@ -624,7 +616,7 @@ body { font-family: 'Noto Sans TC', sans-serif; background: #F9FAFB; color: var(
         <div class="preview-panel-bg">
           <!-- Email preview card -->
           <div class="email-preview-card">
-            <div class="email-meta"><span class="label">寄件人</span><span>寄件團隊 &lt;noreply@alleypin.cc&gt;</span></div>
+            <div class="email-meta"><span class="label">寄件人</span><span>{診所名稱} &lt;noreply@alleypin.cc&gt;</span></div>
             <div class="email-divider"></div>
             <div class="email-subject" id="email-preview-subject">[アリピンクリニック] 台風接近に伴う臨時休診のお知らせ</div>
             <div class="email-divider"></div>
@@ -635,7 +627,7 @@ body { font-family: 'Noto Sans TC', sans-serif; background: #F9FAFB; color: var(
         </div>
       </div>
     </div>
-    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modal-c')">取消</button><button class="btn btn-primary" onclick="closeModal('modal-c')">儲存</button></div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modal-c')">取消</button><button class="btn btn-primary" onclick="saveModalC()">儲存</button></div>
   </div>
 </div>
 
@@ -656,7 +648,7 @@ body { font-family: 'Noto Sans TC', sans-serif; background: #F9FAFB; color: var(
         </div>
         <div class="filter-card">
           <div class="filter-card-title">發送方式說明</div>
-          <div class="alert-box">系統會依據會員是否綁定 LINE，自動選擇最適合的通道發送訊息：<br>✔ 已加入 LINE 好友的會員，將透過 LINE 接收訊息<br>✉️ 未加入或封鎖 LINE 好友的會員，系統將自動以 Email（優先）與簡訊發送</div>
+          <div class="alert-box">系統會依據會員是否綁定 LINE，自動選擇最適合的通道發送訊息：<br>✔ 已加入 LINE 好友的會員，將透過 LINE 接收訊息<br>✉️ 未加入或已封鎖 LINE 好友者，將優先發送 Email，未填寫則改以簡訊通知</div>
           <div class="toggle-row">
             <div class="toggle-label-wrap"><div class="toggle-label">合併寄送訊息<span class="icon" style="color:#9CA3AF"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span></div><div class="toggle-sublabel">若多位家庭成員綁定相同 LINE 帳號或手機號碼時，系統將合併為一則 LINE 訊息或簡訊發送</div></div>
             <div class="toggle-switch"></div>
@@ -672,7 +664,7 @@ body { font-family: 'Noto Sans TC', sans-serif; background: #F9FAFB; color: var(
           <div class="stat-item"><div><div class="stat-dot-row"><div class="stat-dot" style="background:#3B82F6"></div><span class="stat-label">簡訊發送</span></div><div class="stat-sublabel">未加好友但有手機</div></div><div class="stat-number">300</div></div>
           <div class="stat-item"><div><div class="stat-dot-row"><div class="stat-dot" style="background:#D1D5DB"></div><span class="stat-label">無法發送</span></div><div class="stat-sublabel">未加好友+無手機號</div></div><div class="stat-number">100</div></div>
         </div>
-        <div class="alert-box" style="width:100%"><div class="alert-box-head"><span class="icon" style="color:#6B7280"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>為何預估人數與實際發送人數會不同？</div><ul><li>發送前若新增符合條件的會員，會自動加入名單</li><li>會員在發送前已封鎖 LINE，無法收到訊息</li><li>會員手機號碼格式錯誤，導致發送失敗</li><li>會員電子信箱格式錯誤，導致發送失敗</li><li>未填寫簡訊內容時，系統不會發送簡訊</li><li>未填寫電子信箱內容時，系統不會發送Email</li></ul></div>
+        <div class="alert-box" style="width:100%"><div class="alert-box-head"><span class="icon" style="color:#6B7280"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>為何預估人數與實際發送人數會不同？</div><ul><li>發送前若新增符合條件的會員，會自動加入名單</li><li>會員在發送前已封鎖 LINE，無法收到訊息</li><li>會員手機號碼格式錯誤，導致發送失敗</li><li>會員 Email 格式錯誤，導致發送失敗</li><li>未填寫簡訊內容時，系統不會發送簡訊（簡訊發送人數視為 0）</li><li>未填寫電子信箱內容時，系統不會發送 Email（Email 發送人數視為 0）</li></ul></div>
       </div>
     </div>
     <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modal-d')">取消</button><button class="btn btn-primary" onclick="closeModal('modal-d')">儲存</button></div>
@@ -854,7 +846,7 @@ body { font-family: 'Noto Sans TC', sans-serif; background: #F9FAFB; color: var(
   </div>
 </div>
 
-<div class="proto-badge">🖱 Prototype v4</div>
+<div class="proto-badge">🖱 Prototype v5</div>
 
 <script type="module">
 import { Editor } from 'https://esm.sh/@tiptap/core@2.6.6';
@@ -908,6 +900,7 @@ function syncPreview() {
   if (previewEl) previewEl.innerHTML = editor.getHTML();
 }
 editor.on('update', syncPreview);
+syncPreview(); // init right panel on load
 
 /* Button event listeners */
 document.getElementById('toggleBoldButton').addEventListener('click', () => editor.chain().focus().toggleBold().run());
@@ -931,8 +924,15 @@ document.getElementById('toggleOrderedListButton').addEventListener('click', () 
 document.getElementById('toggleBlockquoteButton').addEventListener('click', () => editor.chain().focus().toggleBlockquote().run());
 document.getElementById('toggleHRButton').addEventListener('click', () => editor.chain().focus().setHorizontalRule().run());
 document.getElementById('addImageButton').addEventListener('click', () => {
-  const inp = document.getElementById('att-image-upload');
-  if (inp) inp.click();
+  document.getElementById('editor-image-upload').click();
+});
+document.getElementById('editor-image-upload').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => editor.chain().focus().setImage({ src: ev.target.result }).run();
+  reader.readAsDataURL(file);
+  e.target.value = '';
 });
 document.getElementById('addVideoButton').addEventListener('click', () => {
   document.getElementById('doc-upload').click();
@@ -1073,7 +1073,7 @@ const MAX_MB = 10;
 let nextAttId = 2;
 let attachments = [
   { id: 0, type: 'file', name: 'template01.docx', size: 1.2, sizeStr: '1.2 MB', src: null },
-  { id: 1, type: 'image', name: 'upload preview', src: 'https://images.unsplash.com/photo-1576671081837-49000212a370?w=600&q=80', size: 0 }
+  { id: 1, type: 'file', name: 'image01.jpg', size: 0.8, sizeStr: '0.8 MB', src: null }
 ];
 
 function renderAttachmentList() {
@@ -1081,20 +1081,13 @@ function renderAttachmentList() {
   if (!list) return;
   list.innerHTML = '';
   attachments.forEach((att, i) => {
-    if (att.type === 'file') {
-      const div = document.createElement('div');
-      div.className = 'file-list-item';
-      div.setAttribute('data-att-id', att.id);
-      if (i > 0) div.style.marginTop = '8px';
-      div.innerHTML = `<span class="icon" style="color:#6B7280;flex-shrink:0">${FILE_ICON}</span><span style="flex:1;font-size:14px;font-weight:500;color:var(--text-primary)">${att.name}</span><span style="font-size:14px;color:var(--text-secondary);margin-right:8px">${att.sizeStr}</span><button class="att-delete-btn" data-att-id="${att.id}" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);display:flex;align-items:center;justify-content:center;padding:4px">${TRASH_ICON}</button>`;
-      list.appendChild(div);
-    } else if (att.type === 'image') {
-      const div = document.createElement('div');
-      div.style.cssText = 'position:relative;border-radius:8px;overflow:hidden;margin-top:8px';
-      div.setAttribute('data-att-id', att.id);
-      div.innerHTML = `<img src="${att.src}" alt="${att.name}" style="width:100%;height:180px;object-fit:cover;display:block"><button class="att-delete-btn" data-att-id="${att.id}" style="position:absolute;top:8px;right:8px;background:#EF4444;border:none;border-radius:8px;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:white">${TRASH_ICON}</button>`;
-      list.appendChild(div);
-    }
+    const sizeStr = att.sizeStr || (att.size ? att.size.toFixed(1) + ' MB' : '');
+    const div = document.createElement('div');
+    div.className = 'file-list-item';
+    div.setAttribute('data-att-id', att.id);
+    if (i > 0) div.style.marginTop = '8px';
+    div.innerHTML = `<span class="icon" style="color:#6B7280;flex-shrink:0">${FILE_ICON}</span><span style="flex:1;font-size:14px;font-weight:500;color:var(--text-primary)">${att.name}</span><span style="font-size:14px;color:var(--text-secondary);margin-right:8px">${sizeStr}</span><button class="att-delete-btn" data-att-id="${att.id}" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);display:flex;align-items:center;justify-content:center;padding:4px">${TRASH_ICON}</button>`;
+    list.appendChild(div);
   });
   document.querySelectorAll('.att-delete-btn').forEach(btn => {
     btn.addEventListener('click', () => deleteAttachment(parseInt(btn.getAttribute('data-att-id'))));
@@ -1106,17 +1099,11 @@ function renderPreviewAttachments() {
   if (!area) return;
   area.innerHTML = '';
   attachments.forEach(att => {
-    if (att.type === 'file') {
-      const div = document.createElement('div');
-      div.style.cssText = 'background:white;border-radius:8px;padding:12px 16px;display:flex;align-items:center;gap:8px;margin-bottom:8px';
-      div.innerHTML = `<span class="icon" style="color:#6B7280;flex-shrink:0">${FILE_ICON}</span><span style="flex:1;font-size:14px;font-weight:500;color:var(--text-primary)">${att.name}</span><span style="font-size:14px;color:var(--text-secondary)">${att.sizeStr}</span>`;
-      area.appendChild(div);
-    } else if (att.type === 'image') {
-      const div = document.createElement('div');
-      div.style.cssText = 'border-radius:8px;overflow:hidden;margin-bottom:8px';
-      div.innerHTML = `<img src="${att.src}" alt="${att.name}" style="width:100%;display:block">`;
-      area.appendChild(div);
-    }
+    const sizeStr = att.sizeStr || (att.size ? att.size.toFixed(1) + ' MB' : '');
+    const div = document.createElement('div');
+    div.style.cssText = 'background:white;border-radius:8px;padding:12px 16px;display:flex;align-items:center;gap:8px;margin-bottom:8px';
+    div.innerHTML = `<span class="icon" style="color:#6B7280;flex-shrink:0">${FILE_ICON}</span><span style="flex:1;font-size:14px;font-weight:500;color:var(--text-primary)">${att.name}</span><span style="font-size:14px;color:var(--text-secondary)">${sizeStr}</span>`;
+    area.appendChild(div);
   });
 }
 
@@ -1143,12 +1130,9 @@ document.getElementById('att-image-upload').addEventListener('change', function(
   const file = e.target.files[0];
   if (!file) return;
   const sizeMB = file.size / (1024 * 1024);
-  const reader = new FileReader();
-  reader.onload = ev => {
-    attachments.push({ id: nextAttId++, type: 'image', name: file.name, src: ev.target.result, size: sizeMB });
-    renderAttachmentList(); renderPreviewAttachments(); updateProgress();
-  };
-  reader.readAsDataURL(file);
+  const sizeStr = sizeMB < 1 ? `${(file.size / 1024).toFixed(0)} KB` : `${sizeMB.toFixed(1)} MB`;
+  attachments.push({ id: nextAttId++, type: 'file', name: file.name, size: sizeMB, sizeStr, src: null });
+  renderAttachmentList(); renderPreviewAttachments(); updateProgress();
   e.target.value = '';
 });
 
@@ -1158,24 +1142,48 @@ document.getElementById('doc-upload').addEventListener('change', function(e) {
   if (!file) return;
   const sizeMB = file.size / (1024 * 1024);
   const sizeStr = sizeMB < 1 ? `${(file.size / 1024).toFixed(0)} KB` : `${sizeMB.toFixed(1)} MB`;
-  if (file.type.startsWith('image/')) {
-    const reader = new FileReader();
-    reader.onload = ev => {
-      attachments.push({ id: nextAttId++, type: 'image', name: file.name, src: ev.target.result, size: sizeMB });
-      renderAttachmentList(); renderPreviewAttachments(); updateProgress();
-    };
-    reader.readAsDataURL(file);
-  } else {
-    attachments.push({ id: nextAttId++, type: 'file', name: file.name, size: sizeMB, sizeStr, src: null });
-    renderAttachmentList(); renderPreviewAttachments(); updateProgress();
-  }
+  attachments.push({ id: nextAttId++, type: 'file', name: file.name, size: sizeMB, sizeStr, src: null });
+  renderAttachmentList(); renderPreviewAttachments(); updateProgress();
   e.target.value = '';
 });
+
+/* ── Render Screen B attachment area ── */
+function renderScreenBAttachments() {
+  const area = document.getElementById('screen-b-attachment-area');
+  if (!area) return;
+  area.innerHTML = '';
+  attachments.forEach(att => {
+    const sizeStr = att.sizeStr || (att.size ? att.size.toFixed(1) + ' MB' : '');
+    const div = document.createElement('div');
+    div.className = 'file-item';
+    div.innerHTML = `<span class="icon file-action"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span><span class="file-name">${att.name}</span><span class="file-size">${sizeStr}</span>`;
+    area.appendChild(div);
+  });
+}
+
+/* ── Save Modal C → sync to Screen B ── */
+function saveModalC() {
+  // Sync subject
+  const subjectInput = document.getElementById('subject-input');
+  const screenBSubject = document.getElementById('screen-b-preview-subject');
+  if (subjectInput && screenBSubject) screenBSubject.textContent = subjectInput.value;
+
+  // Sync body (from live preview which already mirrors editor)
+  const modalPreviewBody = document.getElementById('email-preview-body');
+  const screenBBody = document.getElementById('screen-b-preview-body');
+  if (modalPreviewBody && screenBBody) screenBBody.innerHTML = modalPreviewBody.innerHTML;
+
+  // Sync attachments
+  renderScreenBAttachments();
+
+  closeModal('modal-c');
+}
 
 /* ── Init ── */
 renderAttachmentList();
 renderPreviewAttachments();
 updateProgress();
+renderScreenBAttachments();
 </script>
 </body>
 </html>
