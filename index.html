@@ -127,8 +127,10 @@ body { font-family: 'Noto Sans TC', sans-serif; background: #F9FAFB; color: var(
 .condition-value { font-size: 16px; font-weight: 500; color: var(--text-primary); line-height: 1.5; }
 .preview-box { background: #F3F4F6; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 24px; }
 .email-preview-card { background: white; border-radius: 16px; padding: 16px; box-shadow: var(--shadow-card); }
-.email-meta { font-size: 15px; font-weight: 500; line-height: 1.5; margin-bottom: 4px; }
-.email-meta .label { color: #9CA3AF; margin-right: 4px; }
+.email-meta { display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
+.email-meta-avatar { width: 32px; height: 32px; border-radius: 50%; background: #F3F4F6; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.email-meta-text { font-size: 16px; font-weight: 500; line-height: 1.5; letter-spacing: 0.4px; color: #111928; white-space: nowrap; }
+.email-meta-text .email-addr { color: #6B7280; }
 .email-divider { height: 1px; background: var(--border-secondary); margin: 8px 0; }
 .email-subject { font-size: 15px; color: var(--text-primary); line-height: 1.5; margin-bottom: 4px; }
 .email-body { font-size: 15px; color: var(--text-primary); line-height: 1.6; }
@@ -412,7 +414,7 @@ body { font-family: 'Noto Sans TC', sans-serif; background: #F9FAFB; color: var(
         <div class="card-header"><div class="card-title">預覽訊息</div><button class="edit-btn" onclick="openModal('modal-c')"><span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></span>編輯</button></div>
         <div class="preview-box">
           <div class="email-preview-card">
-            <div class="email-meta"><span class="label">寄件人</span><span>{診所名稱} &lt;noreply@alleypin.cc&gt;</span></div>
+            <div class="email-meta"><div class="email-meta-avatar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><span class="email-meta-text">{診所名稱} <span class="email-addr">&lt;noreply@alleypin.cc&gt;</span></span></div>
             <div class="email-divider"></div>
             <div class="email-subject" id="screen-b-preview-subject">[アリピンクリニック] 台風接近に伴う臨時休診のお知らせ</div>
             <div class="email-divider"></div>
@@ -475,7 +477,7 @@ body { font-family: 'Noto Sans TC', sans-serif; background: #F9FAFB; color: var(
         <div class="card-header"><div class="card-title">預覽訊息</div><button class="edit-btn" onclick="openModal('modal-c')"><span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></span>編輯</button></div>
         <div class="preview-box">
           <div class="email-preview-card">
-            <div class="email-meta"><span class="label">寄件人</span><span>{診所名稱} &lt;noreply@alleypin.cc&gt;</span></div>
+            <div class="email-meta"><div class="email-meta-avatar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><span class="email-meta-text">{診所名稱} <span class="email-addr">&lt;noreply@alleypin.cc&gt;</span></span></div>
             <div class="email-divider"></div>
             <div class="email-subject">[アリピンクリニック] 台風接近に伴う臨時休診のお知らせ</div>
             <div class="email-divider"></div>
@@ -616,7 +618,7 @@ body { font-family: 'Noto Sans TC', sans-serif; background: #F9FAFB; color: var(
         <div class="preview-panel-bg">
           <!-- Email preview card -->
           <div class="email-preview-card">
-            <div class="email-meta"><span class="label">寄件人</span><span>{診所名稱} &lt;noreply@alleypin.cc&gt;</span></div>
+            <div class="email-meta"><div class="email-meta-avatar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><span class="email-meta-text">{診所名稱} <span class="email-addr">&lt;noreply@alleypin.cc&gt;</span></span></div>
             <div class="email-divider"></div>
             <div class="email-subject" id="email-preview-subject">[アリピンクリニック] 台風接近に伴う臨時休診のお知らせ</div>
             <div class="email-divider"></div>
